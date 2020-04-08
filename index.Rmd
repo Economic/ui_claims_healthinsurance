@@ -1,0 +1,146 @@
+---
+title: "X.X million workers likely lost their employer-provided health insurance in the past 2 weeks"
+author: "Josh Bivens and Ben Zipperer"
+date: "4/2/2020"
+output:
+  html_document:
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(DT)
+library(tidyverse)
+library(scales)
+opts_chunk$set(echo = FALSE)
+```
+
+```{r include=FALSE}
+ephi <- read_csv("table_ephi.csv") %>% 
+  mutate(ephi_rate = percent(ephi_rate, accuracy = 0.1)) %>% 
+  rename(
+    Sector = sector_title,
+    Share = ephi_rate
+  )
+
+wa_claims <- read_csv("table_wa.csv") %>% 
+  transmute(
+    Industry = sector_title,
+    `Total job losses (UI initial claims)` = number(emp_change, accuracy = 1.0, big.mark = ","),
+    `EPHI job losses` = number(ephi_change, accuracy = 1.0, big.mark = ","),
+    `Total job losses as a share of industry employment` = percent(wa_shock_industry, accuracy = 0.1)
+  )
+
+us_claims <- read_csv("table_us.csv") %>% 
+  transmute(
+    Industry = sector_title,
+    `Total job losses (UI initial claims)` = number(emp_change, accuracy = 1.0, big.mark = ","),
+    `EPHI job losses` = number(ephi_change, accuracy = 1.0, big.mark = ","),
+    `Total job losses as a share of industry employment` = percent(shock_industry, accuracy = 0.1)
+  )
+
+state_claims <- read_csv("table_states.csv") %>% 
+  transmute(
+    `State` = state_name, 
+    `Total job losses (UI initial claims)` = number(emp_change, accuracy = 1.0, big.mark = ","), 
+    `EPHI job losses` = number(ephi_change, accuracy = 1.0, big.mark = ","),
+    `Total job losses as a share of industry employment` = percent(emp_change_pct, accuracy = 0.1)
+  ) %>% 
+  arrange(State)
+
+```
+
+## Tables
+
+### Table 1. Share of workers covered by their employer-provided health insurance, by industry
+```{r ephiTab}
+datatable(
+  ephi,
+  rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Brt',
+    buttons = list(list(extend = 'csv', filename= 'table1')),
+    columnDefs = list(
+      list(className = 'dt-left', width = '20%', targets = 0),
+      list(className = 'dt-right', width = '20%', targets = 1)
+    ),
+    scrollY = "300px",
+    scrollCollapse = TRUE,
+    paging = FALSE
+  )
+)
+```
+Source: Authors' analysis using [data](https://thedataweb.rm.census.gov/ftp/cps_ftp.html#cpsmarch) from the 2018 Annual Social Economic Supplement to the Current Population Survey
+
+### Table 2: New UI claims in Washington State for the week ending March 21, by industry
+```{r wa_claims}
+datatable(
+  wa_claims,
+  rownames = FALSE, 
+  extensions = 'Buttons',
+  options = list(
+    buttons = list(list(extend = 'csv', filename= 'table2')),
+    dom = 'Brt',
+    columnDefs = list(
+      list(className = 'dt-left', width = '20%', targets = 0),
+      list(className = 'dt-right', width = '20%', targets = 1:3)
+    ),
+    scrollY = "300px",
+    scrollCollapse = TRUE,
+    paging = FALSE
+  )
+) %>% 
+  formatStyle(
+  "Industry",
+  target = 'row',
+  backgroundColor = styleEqual("All industries", 'gray'))
+```
+Source: Author’s analysis of Washington Department of Labor UI claims [data](https://esdorchardstorage.blob.core.windows.net/esdwa/Default/ESDWAGOV/labor-market-info/Libraries/Regional-reports/UI-Claims-Karen/2020%20claims/UI%20claims%20week%2011_2020.xlsx) and Quarterly Census of Employment and Wages [data](https://www.bls.gov/cew/downloadable-data-files.htm).
+
+
+### Table 3: Estimated new UI claims and EPHI losses for the weeks ending March 21 and March 28, by industry
+```{r us_claims}
+datatable(
+  us_claims,
+  rownames = FALSE, 
+  extensions = 'Buttons',
+  options = list(
+    buttons = list(list(extend = 'csv', filename= 'table3')),
+    dom = 'Brt',
+    columnDefs = list(
+      list(className = 'dt-left', width = '20%', targets = 0),
+      list(className = 'dt-right', width = '20%', targets = 1:3)
+    ),
+    scrollY = "300px",
+    scrollCollapse = TRUE,
+    paging = FALSE
+  )
+) %>% 
+  formatStyle(
+  "Industry",
+  target = 'row',
+  backgroundColor = styleEqual("All industries", 'gray'))
+```
+Source: Author’s analysis of Washington Department of Labor UI claims [data](https://esdorchardstorage.blob.core.windows.net/esdwa/Default/ESDWAGOV/labor-market-info/Libraries/Regional-reports/UI-Claims-Karen/2020%20claims/UI%20claims%20week%2011_2020.xlsx), US Department of Labor UI Claims [data](https://www.dol.gov/ui/data.pdf) and Quarterly Census of Employment and Wages [data](https://www.bls.gov/cew/downloadable-data-files.htm).
+
+### Table 4. Estimated new UI claims and EPHI losses for the weeks ending March 21 and March 28, by state
+```{r}
+state_claims %>% 
+  datatable(
+    rownames = FALSE, 
+    extensions = 'Buttons',
+    options = list(
+      buttons = list(list(extend = 'csv', filename= 'table4')),
+      dom = 'Brt',
+      columnDefs = list(
+        list(className = 'dt-left', width = '20%', targets = 0),
+        list(className = 'dt-right', width = '20%', targets = 1:3)
+      ),
+      scrollY = "300px",
+      scrollCollapse = TRUE,
+      paging = FALSE
+    )
+  )
+```
+Source: Author’s analysis of Washington Department of Labor UI claims [data](https://esdorchardstorage.blob.core.windows.net/esdwa/Default/ESDWAGOV/labor-market-info/Libraries/Regional-reports/UI-Claims-Karen/2020%20claims/UI%20claims%20week%2011_2020.xlsx), US Department of Labor UI Claims [data](https://www.dol.gov/ui/data.pdf) and Quarterly Census of Employment and Wages [data](https://www.bls.gov/cew/downloadable-data-files.htm).
